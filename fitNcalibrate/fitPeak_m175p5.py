@@ -215,7 +215,7 @@ def main():
 	   random3.SetSeed(1)
 	   
            histoEb = TH1F("histoEb", "", 50,64,70) # 175v5
-	   histoErrEb = TH1F("hde", "", 30,0.08,0.2) # 175v5
+	   histoErrEb = TH1F("histoErrEb", "", 30,0.08,0.2) # 175v5
            histoPull = TH1F("hpull", "",100,-100,100)
 	
 	   pred = 69.390 #175v5
