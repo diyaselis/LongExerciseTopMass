@@ -234,7 +234,7 @@ def main():
 		# Calculate the energy peak position in the big MC sample
 		Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
 		histoEb.Fill(Eb)
-		histoErrEb.Fill(Deb)
+		histoErrEb.Fill(DEb)
 		
 		pull = (Eb-pred)/DEb
 		histoPull.Fill(pull)
