@@ -61,6 +61,10 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
 
+    #all done here ;)
+    return Ereco,Err
+
+    '''
     # Make a pull distribution    
     hPull = h.Clone("Pull")
     for ibin in range(1, hFit.GetNbinsX()+1):
@@ -98,7 +102,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     p1.SetTicky(1)
     p1.SetTopMargin(0.13)
     p1.SetBottomMargin(0.02)
-    p1.Draw()    
+    #p1.Draw()    
     p2 = ROOT.TPad('p2','p2',0.,0.,1.0,0.3)
     p2.SetGridy()
     p2.SetBorderMode(0)
@@ -107,11 +111,11 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     p2.SetTicky(1)
     p2.SetTopMargin(0.05)
     p2.SetBottomMargin(0.3)
-    p2.Draw()
+    #p2.Draw()
     ## Draw in the pad of the fit
     p1.cd()
     hFit.GetXaxis().SetRangeUser(minToFit,maxToFit)     
-    hFit.Draw()
+    #hFit.Draw()
     ##Create some labels about the statistics
     caption1 = TLatex()
     caption1.SetTextSize(0.045)
@@ -152,7 +156,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     ## Edit the pad for the pull
     p2.cd()
     hPull.GetXaxis().SetRangeUser(minToFit,maxToFit)
-    hPull.Draw("e")
+    #hPull.Draw("e")
 
     #save and delete
     sName = inDir+"/fit_";
@@ -165,9 +169,46 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     del c
     fitfunc.IsA().Destructor(fitfunc)
     del caption1,caption2
-
+    '''
     #all done here ;)
-    return Ereco,Err
+    #return Ereco,Err
+    
+def plotter(h=None,name=None):
+    c3 = TCanvas("c3","")
+    c3.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    h.Fit("gaus")
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c3.Update()
+    stats = c3.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c3.RedrawAxis()
+    c3.Update()
+
+    c3.SaveAs(name)
+    c3.Close()
+
 
 def main():
 
@@ -242,7 +283,11 @@ def main():
            # Calculate the energy peak position in the big MC sample
            Eb,DEb = gPeak(h=histo,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
            print "<E_{b}> = (%3.2f #pm %3.2f) GeV" % (Eb,DEb)
-
+		
+	   plotter(histoEb,"histoEb.pdf")
+	   plotter(histoErrEb, "histoErrEb.pdf")
+	   plotter(histoPull,"histoPull.pdf")
+	   
            res.Close()
                
 if __name__ == "__main__":
