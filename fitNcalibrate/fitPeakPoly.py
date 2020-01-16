@@ -3,7 +3,9 @@ import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 
 def myFitFunc(x=None,par=None):
-    return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
+    #Con = (par[2]**2-(3*par[3]*par[0]+par[2])**2)/(3*par[3])
+    #return (par[1]+Con*x[0]+par[2]*x[0]**2+par[3]*x[0]**3) 
+    return par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -29,7 +31,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     minToFit = 3.6
     maxToFit = 4.8
     ## Set the function
-    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
+    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 4)
     ## Set constant
     fitfunc.SetParameter(0, 0);
     #fitfunc.SetParLimits(0, -1000, 1000);
@@ -40,9 +42,10 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     fitfunc.SetParameter(2, 0);
     #fitfunc.SetParLimits(2, -10, 1);
     ## Set Cubic
-    fitfunc.SetParameter(3, 1);
-    fitfunc.SetParameter(4, h.Integral())
-    fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral())
+    fitfunc.SetParameter(3, 4);
+    fitfunc.SetParLimits(3, 3, 5)
+    #fitfunc.SetParameter(4, h.Integral())
+    #fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral())
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
@@ -65,7 +68,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
-    mean = fitfunc.GetMaximumX(3)
+    mean = fitfunc.GetParameter(3)
     meanErr = fitfunc.GetParError(3)
     # Calculate the uncalibrated Energy peak position and its uncertainty
     Ereco = math.exp(mean)
