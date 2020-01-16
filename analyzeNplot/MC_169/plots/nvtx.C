@@ -1,7 +1,7 @@
 void nvtx()
 {
 //=========Macro generated from canvas: c/c
-//=========  (Wed Jan 15 21:35:20 2020) by ROOT version 6.14/09
+//=========  (Thu Jan 16 10:09:26 2020) by ROOT version 6.14/09
    TCanvas *c = new TCanvas("c", "c",0,0,500,500);
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
