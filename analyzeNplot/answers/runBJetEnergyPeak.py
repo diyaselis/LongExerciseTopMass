@@ -24,7 +24,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         'lep0pt':ROOT.TH1F('lep0pt',';Leading Lepton Transverse Momentum; Events',25,0,250),
         'lep1pt':ROOT.TH1F('lep1pt',';Subleading Lepton Transverse Momentum; Events',20,0,200),
         'bjeteta':ROOT.TH1F('bjeteta',';#eta; Jets',50,-3,3),
-        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',20,3.,7.),
+        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',80,3.,7.),
         'metpt':ROOT.TH1F('metpt',';MET [GeV]; Jets',55,0.,1100.),
         'elpt':ROOT.TH1F('elpt',';electron pt [GeV]; electrons',40,0.,400.),
         'eleta':ROOT.TH1F('eleta',';#eta; electrons',50,-3,3),
