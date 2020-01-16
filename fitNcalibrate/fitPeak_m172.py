@@ -227,9 +227,9 @@ def main():
         pull=(Eb-pred)/DEb
         hpull.Fill(pull)
 
-    plotter(E_peak,"Eb_m172.png")
-    plotter_err(E_peak_err,"ErrEb_m172.png")
-    plotter_err(hpull,"Pull_m172.png")
+    plotter(E_peak,"MC_172/Eb_m172.png")
+    plotter_err(E_peak_err,"MC_172/ErrEb.png")
+    plotter_err(hpull,"MC_172/Pull.png")
 
     res.Close()
                
