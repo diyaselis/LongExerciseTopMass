@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# Executable
+# python pseudo_fitPeak_m169p5.py -i "MC_169" -j "../analyzeNplot/data/samples_Run2016_m169p5.json" -l 35867.
+
 import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 import tdrstyle
@@ -149,7 +152,7 @@ def main():
     Npe = 2000
     
     histoEb = TH1F("histoEb", "", 50,61,68) # 169v5
-    histoDEb = TH1F("histoDEb", "", 30,0.09,0.2) # 169v5
+    histoDEb = TH1F("histoDEb", "", 30,0,0.2) # 169v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
     pred = 65.74 #169v5
@@ -173,7 +176,7 @@ def main():
 
     plotter(histoEb,"MC_169/Eb.png")
     plotter(histoDEb,"MC_169/DEb.png")
-    plotter(hpull,"MC_169/Pull.png")
+    plotter(histoPull,"MC_169/Pull.png")
 
     res.Close()
 

@@ -173,7 +173,7 @@ def main():
 
     plotter(histoEb,"MC_172/Eb.png")
     plotter(histoDEb,"MC_172/DEb.png")
-    plotter(hpull,"MC_172/Pull.png")
+    plotter(histoPull,"MC_172/Pull.png")
 
     res.Close()
 

@@ -149,7 +149,7 @@ def main():
     Npe = 2000
     
     histoEb = TH1F("histoEb", "", 50,64,70) # 169v5
-    histoDEb = TH1F("histoDEb", "", 30,0.08,0.2) # 175v5
+    histoDEb = TH1F("histoDEb", "", 30,0,0.2) # 175v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
     pred = 69.39 #175v5
@@ -173,7 +173,7 @@ def main():
 
     plotter(histoEb,"MC_175/Eb.png")
     plotter(histoDEb,"MC_175/DEb.png")
-    plotter(hpull,"MC_175/Pull.png")
+    plotter(histoPull,"MC_175/Pull.png")
 
     res.Close()
 
