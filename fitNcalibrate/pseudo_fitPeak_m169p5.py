@@ -32,8 +32,8 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     ## Set the function
     fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
     ## Set normalization
-    fitfunc.SetParameter(2, h.Integral());
-    fitfunc.SetParLimits(2, 0.1*h.Integral(), 2.5*h.Integral());
+    fitfunc.SetParameter(0, h.Integral());
+    fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
     ## Set gaussian mean starting value and limits
     fitfunc.SetParameter(1, 4.2);
     fitfunc.SetParLimits(1, 4., 4.4);
@@ -147,47 +147,33 @@ def main():
     r3 = TRandom3()
     r3.SetSeed(0)
     Npe = 2000
-    heb = TH1F("heb", "", 50,61,68) # 169v5
-    #heb = TH1F("heb", "", 50,63,70) # 172v5
-    #heb = TH1F("heb", "", 50,64,70) # 175v5
+    
+    histoEb = TH1F("histoEb", "", 50,61,68) # 169v5
+    histoDEb = TH1F("histoDEb", "", 30,0.09,0.2) # 169v5
+    histoPull = TH1F("histoPull", "",100,-100,100)
 
-    hde = TH1F("hde", "", 30,0.09,0.2) # 169v5
-    #hde = TH1F("hde", "", 30,0,0.4) # 172v5
-    #hde = TH1F("hde", "", 30,0.08,0.2) # 175v5
-
-    hpull = TH1F("hpull", "",100,-100,100)
-    hpullcal = TH1F("hpullcal", "",100,-100,100)
-
-    pred = 65.740 #169v5
-    #pred = 67.57 #172v5
-    #pred = 69.39 #175v5
+    pred = 65.74 #169v5
 
     for i in range(0,Npe):
-        hpe = histo.Clone()
+        histoPeak = histo.Clone()
         for ibin in range(0,histo.GetNbinsX()):
             y = histo.GetBinContent(ibin)
             x = histo.GetXaxis().GetBinCenter(ibin)
             fluct = r3.PoissonD(y*math.exp(x))/math.exp(x)
-            hpe.SetBinContent(ibin,fluct)
+            histoPeak.SetBinContent(ibin,fluct)
             err = math.sqrt(fluct)/math.exp(x)
-            hpe.SetBinError(ibin,err)
+            histoPeak.SetBinError(ibin,err)
         # Calculate the energy peak position in the big MC sample
-        Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
-        heb.Fill(Eb)
-        hde.Fill(DEb)
+        Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        histoEb.Fill(Eb)
+        histoDEb.Fill(DEb)
         pull=(Eb-pred)/DEb
-        hpull.Fill(pull)
+        histoPull.Fill(pull)
 
-        #Ebcal=(Eb-29.6)/0.5312
-        #DEbcal=DEb/0.5312
-        #print "Eb:", Eb, "  DEb:", DEb, "  Pull:", pull, "Delta:", abs(Eb-pred)
-        #pullcal=(Ebcal-pred)/DEbcal
-        #hpullcal.Fill(pullcal)
 
-    plotter(heb,"Eb.pdf")
-    plotter(hde,"Deb.pdf")
-    plotter(hpull,"Pull.pdf")
-    #plotter(hpullcal,"Pull_corr.pdf")
+    plotter(histoEb,"MC_169/Eb.png")
+    plotter(histoDEb,"MC_169/DEb.png")
+    plotter(hpull,"MC_169/Pull.png")
 
     res.Close()
 
