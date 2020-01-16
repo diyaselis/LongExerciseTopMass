@@ -3,16 +3,17 @@ import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    # return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    return par[0]*Math.crystalball_function (x[0],par[1],par[2],par[3],par[4])
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
-    # Set the stats off 
+    # Set the stats off
     gStyle.SetOptStat(0)
     gStyle.SetOptTitle(0)
     gStyle.SetTickLength(0.03)
 
-    # Get the log(E) histogram 
+    # Get the log(E) histogram
     hFit = h.Clone()
     hFit.SetMarkerStyle(8)
     hFit.GetYaxis().SetTitleSize(0.062)
@@ -29,31 +30,42 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     minToFit = 3.6
     maxToFit = 4.8
     ## Set the function
-    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
+    # fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
+    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
     ## Set normalization
     fitfunc.SetParameter(0, h.Integral());
     fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
     ## Set gaussian mean starting value and limits
     fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
+    # fitfunc.SetParLimits(1, 4., 4.4);
     ## Set gaussian width starting value and limits
     fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    # fitfunc.SetParLimits(2, 0.35, 0.95);
+
+    fitfunc.SetParameter(3, 0.65);
+    # # fitfunc.SetParLimits(3, 0.35, 0.95);
+    #
+    fitfunc.SetParameter(4, 0.65);
+    # fitfunc.SetParLimits(4, 0.35, 0.95);
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit) 
+    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit)
     # "E" stands for Minos, "M" for improving fit results
-    # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
+    # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf
 
-    # Get Fit Parameters
-    mean = fitfunc.GetParameter(1)
-    meanErr = fitfunc.GetParError(1)
-    sigma = fitfunc.GetParameter(2)
-    sigmaErr = fitfunc.GetParError(2)
+    Get Fit Parameters
+    mean = fitfunc.GetParameter(4)
+    meanErr = fitfunc.GetParError(4)
+    sigma = fitfunc.GetParameter(3)
+    sigmaErr = fitfunc.GetParError(3)
+    # mean = fitfunc.GetParameter(1)
+    # meanErr = fitfunc.GetParError(1)
+    # sigma = fitfunc.GetParameter(2)
+    # sigmaErr = fitfunc.GetParError(2)
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
@@ -61,7 +73,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
 
-    # Make a pull distribution    
+    # Make a pull distribution
     hPull = h.Clone("Pull")
     for ibin in range(1, hFit.GetNbinsX()+1):
         if hFit.GetBinCenter(ibin) > minToFit and hFit.GetBinCenter(ibin) <= maxToFit:
@@ -72,7 +84,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
               pull = (binCont-valIntegral)/binErr
               hPull.SetBinContent(ibin, pull)
               hPull.SetBinError(ibin, 1)
-        else:      
+        else:
             hPull.SetBinContent(ibin, 0.)
             hPull.SetBinError(ibin, 0.)
     hPull.SetMarkerStyle(8)
@@ -98,7 +110,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     p1.SetTicky(1)
     p1.SetTopMargin(0.13)
     p1.SetBottomMargin(0.02)
-    p1.Draw()    
+    p1.Draw()
     p2 = ROOT.TPad('p2','p2',0.,0.,1.0,0.3)
     p2.SetGridy()
     p2.SetBorderMode(0)
@@ -110,7 +122,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     p2.Draw()
     ## Draw in the pad of the fit
     p1.cd()
-    hFit.GetXaxis().SetRangeUser(minToFit,maxToFit)     
+    hFit.GetXaxis().SetRangeUser(minToFit,maxToFit)
     hFit.Draw()
     ##Create some labels about the statistics
     caption1 = TLatex()
@@ -124,7 +136,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     caption2 = TLatex()
     caption2.SetTextSize(0.05)
     caption2.SetTextFont(42)
-    caption2.SetNDC()  
+    caption2.SetNDC()
     caption2.DrawLatex(0.35,0.44,'Uncalibrated Measurement')
     caption2.DrawLatex(0.35,0.39,'<E_{b}> = (%4.2f #pm %4.2f) GeV'%(Ereco,Err))
     ## CMS labels
@@ -158,7 +170,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     sName = inDir+"/fit_";
     if isData is True:
         sName = sName+"Data";
-    else: 
+    else:
         sName = sName+"MC";
     c.SaveAs(sName+".pdf");
     c.SaveAs(sName+".png");
@@ -167,9 +179,6 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     del caption1,caption2
 
     #all done here ;)
-
-    topMass = Ereco+math.sqrt(80.385**2-4.18**2+Ereco**2)
-    print topMass
     return Ereco,Err
 
 def main():
@@ -181,14 +190,14 @@ def main():
            parser.add_option('-j', '--json',    dest='json',    help='json with list of files',  default="../analyzeNplot/data/samples_Run2015_25ns.json", type='string')
            parser.add_option('-l', '--lumi',    dest='lumi' ,   help='lumi to print out',        default=2444.,        type=float)
            (opt, args) = parser.parse_args()
-           
+
            # Read list of MC samples
            if opt.isData is not True:
                samplesList=[]
                jsonFile = open(opt.json,'r')
                jsonList=json.load(jsonFile,encoding='utf-8').items()
                jsonFile.close()
-               for tag,sample in jsonList: 
+               for tag,sample in jsonList:
                    if not sample[3] in samplesList and not "Data" in sample[3]:
                        samplesList.append(sample[3])
 
@@ -200,8 +209,8 @@ def main():
                exit(-1)
            res = ROOT.TFile(fiName, "read")
 
-           #Get the histogram 
-           hName = "bjetenls/"   
+           #Get the histogram
+           hName = "bjetenls/"
            if opt.isData is True:
                hName = hName + "bjetenls"
            else:
@@ -210,7 +219,7 @@ def main():
            histo.SetDirectory(0)
            if opt.isData is not True:
                for sampleInfo in samplesList:
-                   if sampleInfo is not samplesList[0]: 
+                   if sampleInfo is not samplesList[0]:
                        histo.Add(res.Get(str("bjetenls/bjetenls_"+sampleInfo)).Clone());
 
            # Create the output directory
@@ -222,8 +231,6 @@ def main():
            print "<E_{b}> = (%3.2f #pm %3.2f) GeV" % (Eb,DEb)
 
            res.Close()
-               
+
 if __name__ == "__main__":
     sys.exit(main())
-
-

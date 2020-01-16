@@ -3,7 +3,9 @@ import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    #Con = (par[2]**2-(3*par[3]*par[0]+par[2])**2)/(3*par[3])
+    #return (par[1]+Con*x[0]+par[2]*x[0]**2+par[3]*x[0]**3) 
+    return par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -29,16 +31,21 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     minToFit = 3.6
     maxToFit = 4.8
     ## Set the function
-    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
-    ## Set normalization
-    fitfunc.SetParameter(0, h.Integral());
-    fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
-    ## Set gaussian mean starting value and limits
-    fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
-    ## Set gaussian width starting value and limits
-    fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 4)
+    ## Set constant
+    fitfunc.SetParameter(0, 0);
+    #fitfunc.SetParLimits(0, -1000, 1000);
+    ## Set linear
+    fitfunc.SetParameter(1, 0);
+    #fitfunc.SetParLimits(1, -1000, 1000);
+    ## Set quadratic
+    fitfunc.SetParameter(2, 0);
+    #fitfunc.SetParLimits(2, -10, 1);
+    ## Set Cubic
+    fitfunc.SetParameter(3, 4);
+    fitfunc.SetParLimits(3, 3, 5)
+    #fitfunc.SetParameter(4, h.Integral())
+    #fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral())
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
@@ -50,13 +57,19 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
     # Get Fit Parameters
-    mean = fitfunc.GetParameter(1)
-    meanErr = fitfunc.GetParError(1)
-    sigma = fitfunc.GetParameter(2)
-    sigmaErr = fitfunc.GetParError(2)
+    constant = fitfunc.GetParameter(0)
+    constantErr = fitfunc.GetParError(0)
+    linear = fitfunc.GetParameter(1)
+    linearErr = fitfunc.GetParError(1)
+    quadratic = fitfunc.GetParameter(2)
+    quadraticErr = fitfunc.GetParError(2)
+    cubic = fitfunc.GetParameter(3)
+    cubicErr = fitfunc.GetParError(3)
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
+    mean = fitfunc.GetParameter(3)
+    meanErr = fitfunc.GetParError(3)
     # Calculate the uncalibrated Energy peak position and its uncertainty
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
@@ -118,9 +131,11 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     caption1.SetTextFont(42)
     caption1.SetNDC()
     caption1.DrawLatex(0.75,0.8,'Fit Results')
-    caption1.DrawLatex(0.73,0.76,'#mu = %4.2f #pm %4.2f'%(mean,meanErr))
-    caption1.DrawLatex(0.73,0.72,'#sigma = %4.2f #pm %4.2f'%(sigma,sigmaErr))
-    caption1.DrawLatex(0.74,0.67,'#chi^{2}/ndf = %4.2f'%(chi2ndf))
+    caption1.DrawLatex(0.73,0.76,'p0= %4.2f #pm %4.2f'%(constant, constantErr))
+    caption1.DrawLatex(0.73,0.72,'p1= %4.2f #pm %4.2f'%(linear, linearErr))
+    caption1.DrawLatex(0.73,0.68,'p2= %4.2f #pm %4.2f'%(quadratic, quadraticErr))
+    caption1.DrawLatex(0.73,0.64,'p3= %4.2f #pm %4.2f'%(cubic, cubicErr))
+    caption1.DrawLatex(0.74,0.60,'#chi^{2}/ndf = %4.2f'%(chi2ndf))
     caption2 = TLatex()
     caption2.SetTextSize(0.05)
     caption2.SetTextFont(42)
@@ -167,7 +182,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     del caption1,caption2
 
     #all done here ;)
-
+    #print mean
     topMass = Ereco+math.sqrt(80.385**2-4.18**2+Ereco**2)
     print topMass
     return Ereco,Err
