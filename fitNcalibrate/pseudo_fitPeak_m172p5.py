@@ -72,7 +72,7 @@ def plotter(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus")
+    h.Fit("gaus","","",64.0,67.0)
     h.Draw()
 
     label1 = TLatex()
@@ -101,6 +101,69 @@ def plotter(h=None,name=None):
     c1.SaveAs(name)
     c1.Close()
 
+def plotterErr(h=None,name=None):
+    c2 = TCanvas("c2","")
+    c2.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    h.Fit("gaus","","",0,0.1)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c2.Update()
+    stats = c2.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c2.RedrawAxis()
+    c2.Update()
+
+    c2.SaveAs(name)
+    c2.Close()
+
+def plotterPull(h=None,name=None):
+    c3 = TCanvas("c3","")
+    c3.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    #h.Fit("gaus","","",64.0,67.0)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c3.Update()
+    
+    c3.SaveAs(name)
+    c3.Close()
 
 def main():
 
@@ -148,8 +211,8 @@ def main():
     r3.SetSeed(0)
     Npe = 2000
     
-    histoEb = TH1F("histoEb", "", 50,63,70) # 172v5
-    histoDEb = TH1F("histoDEb", "", 30,0,0.4) # 172v5
+    histoEb = TH1F("histoEb", "", 100,63,70) # 172v5
+    histoDEb = TH1F("histoDEb", "", 100,0,0.4) # 172v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
     pred = 67.57 #172v5
@@ -165,6 +228,7 @@ def main():
             histoPeak.SetBinError(ibin,err)
         # Calculate the energy peak position in the big MC sample
         Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        #print(Eb,DEb)
         histoEb.Fill(Eb)
         histoDEb.Fill(DEb)
         pull=(Eb-pred)/DEb
@@ -172,8 +236,8 @@ def main():
 
 
     plotter(histoEb,"MC_172/Eb.png")
-    plotter(histoDEb,"MC_172/DEb.png")
-    plotter(histoPull,"MC_172/Pull.png")
+    plotterErr(histoDEb,"MC_172/DEb.png")
+    plotterPull(histoPull,"MC_172/Pull.png")
 
     res.Close()
 
