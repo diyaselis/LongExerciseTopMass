@@ -34,3 +34,4 @@ end
 ##### ISR = initial state radiation 
 ##### FSR = final state radiation 
 ##### SCALE = Q Scale
+##### Usage: source autorunBJetEnergyPeak.csh <inputFolder_For_plotter.py>
