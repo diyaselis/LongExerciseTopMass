@@ -17,16 +17,18 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
     #book some histograms
     histos={ 
         'bjeten':ROOT.TH1F('bjeten',';Energy [GeV]; Jets',30,0,300),
-        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',20,3.,7.),
+        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',80,3.,7.),
         'nvtx'  :ROOT.TH1F('nvtx',';Vertex multiplicity; Events',30,0,30),
         'nbtags':ROOT.TH1F('nbtags',';b-tag multiplicity; Events',5,0,5),
         
         #Add new histogram for number of jets
-        #'njets':ROOT.TH1F('???','???',???,???,???),
+        'njets':ROOT.TH1F('njets',';Jet multiplicity; Events',20,0,20),
         
         #Add new histogram for electron pt
+        'electronpt':ROOT.TH1F('electronpt', ';Pt [GeV]; Events', 30, 0, 300),
 
         #Add new histogram for muon pt
+        'muonpt':ROOT.TH1F('muonpt', ';Pt [GeV]; Events', 30, 0, 300),
 
         }
     for key in histos:
@@ -44,6 +46,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         #require at least two jets
         nJets, nBtags, nLeptons = 0, 0, 0
         taggedJetsP4=[]
+        leptonsP4 = []
         for ij in xrange(0,tree.nJet):
 
             #get the kinematics and select the jet
@@ -72,6 +75,8 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
             #count selected leptons                    
             nLeptons +=1
 
+            leptonsP4.append(lp4)
+
         if nLeptons<2 : continue
 
         #generator level weight only for MC
@@ -81,13 +86,23 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
 
         #ready to fill the histograms
         #fill nvtx plot
-        #histos['nvtx'].Fill(???,???)
+        histos['nvtx'].Fill(tree.nPV, evWgt)
         
         #fill nbtag plot
-        #histos['nbtags'].Fill(???,???)
+        histos['nbtags'].Fill(nBtags, evWgt)
 
         #fill electron and muon plots
-        #
+        for ij in xrange(0, len(leptonsP4)):
+            if ij>1: break
+            lid = abs(tree.Lepton_id[ij])
+
+            if(lid == 11):
+                histos['electronpt'].Fill(leptonsP4[ij].Pt(), evWgt)
+            if(lid==13):
+                histos['muonpt'].Fill(leptonsP4[ij].Pt(), evWgt)
+            
+        histos['njets'].Fill(nJets, evWgt)
+        
 
         #use up to two leading b-tagged jets
         for ij in xrange(0,len(taggedJetsP4)):
