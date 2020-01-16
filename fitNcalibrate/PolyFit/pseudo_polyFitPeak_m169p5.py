@@ -7,7 +7,16 @@ from ROOT import *
 import tdrstyle
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
+
+def Calc(a, b, c, xmax,d,e,f):
+    first = -(math.sqrt(b**2-3*a*c)+b)/(3*c)
+    second = (math.sqrt(b**2-3*a*c)-b)/(3*c)
+    
+    if abs(first-xmax)>abs(second-xmax):
+        return 
+    else:
+        return -(math.sqrt(e**2-3*d*f)-e)/(3*f)
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -237,9 +246,9 @@ def main():
         histoPull.Fill(pull)
 
 
-    plotter(histoEb,"MC_169/Eb.png")
-    plotterErr(histoDEb,"MC_169/DEb.png")
-    plotterPull(histoPull,"MC_169/Pull.png")
+    plotter(histoEb,"PolyFit/Eb_m169p5.png")
+    plotterErr(histoDEb,"PolyFit/DEb_m169p5.png")
+    plotterPull(histoPull,"PolyFit/Pull_m169p5.png")
 
     res.Close()
 

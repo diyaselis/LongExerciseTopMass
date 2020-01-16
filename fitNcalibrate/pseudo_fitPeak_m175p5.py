@@ -211,8 +211,8 @@ def main():
     r3.SetSeed(0)
     Npe = 2000
     
-    histoEb = TH1F("histoEb", "", 50,64,70) # 169v5
-    histoDEb = TH1F("histoDEb", "", 400,0,0.1) # 175v5
+    histoEb = TH1F("histoEb", "", 200,64,70) # 169v5
+    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 175v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
     pred = 69.39 #175v5

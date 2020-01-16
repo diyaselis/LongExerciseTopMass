@@ -1,13 +1,19 @@
 #!/usr/bin/env python
-# Executable
-# python pseudo_fitPeak_m169p5.py -i "MC_169" -j "../analyzeNplot/data/samples_Run2016_m169p5.json" -l 35867.
-
 import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 import tdrstyle
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
+
+def Calc(a, b, c, xmax,d,e,f):
+    first = -(math.sqrt(b**2-3*a*c)+b)/(3*c)
+    second = (math.sqrt(b**2-3*a*c)-b)/(3*c)
+
+    if abs(first-xmax)>abs(second-xmax):
+        return
+    else:
+        return -(math.sqrt(e**2-3*d*f)-e)/(3*f)
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -75,7 +81,7 @@ def plotter(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus","","",63.0,66.0)
+    h.Fit("gaus","","",64.0,67.0)
     h.Draw()
 
     label1 = TLatex()
@@ -164,7 +170,7 @@ def plotterPull(h=None,name=None):
     label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
 
     c3.Update()
-
+    
     c3.SaveAs(name)
     c3.Close()
 
@@ -214,11 +220,11 @@ def main():
     r3.SetSeed(0)
     Npe = 2000
     
-    histoEb = TH1F("histoEb", "", 200,61,68) # 169v5
-    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 169v5
+    histoEb = TH1F("histoEb", "", 200,63,70) # 172v5
+    histoDEb = TH1F("histoDEb", "", 200,0,0.4) # 172v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
-    pred = 65.74 #169v5
+    pred = 67.57 #172v5
 
     for i in range(0,Npe):
         histoPeak = histo.Clone()
@@ -231,15 +237,16 @@ def main():
             histoPeak.SetBinError(ibin,err)
         # Calculate the energy peak position in the big MC sample
         Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        #print(Eb,DEb)
         histoEb.Fill(Eb)
         histoDEb.Fill(DEb)
         pull=(Eb-pred)/DEb
         histoPull.Fill(pull)
 
 
-    plotter(histoEb,"MC_169/Eb.png")
-    plotterErr(histoDEb,"MC_169/DEb.png")
-    plotterPull(histoPull,"MC_169/Pull.png")
+    plotter(histoEb,"PolyFit/Eb_m172p5.png")
+    plotterErr(histoDEb,"PolyFit/DEb_m172p5.png")
+    plotterPull(histoPull,"PolyFit/Pull_m172p5.png")
 
     res.Close()
 
