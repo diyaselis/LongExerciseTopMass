@@ -5,15 +5,6 @@ from ROOT import *
 def myFitFunc(x=None,par=None):
     return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
 
-def Calc(a, b, c, xmax,d,e,f):
-    first = -(math.sqrt(b**2-3*a*c)+b)/(3*c)
-    second = (math.sqrt(b**2-3*a*c)-b)/(3*c)
-    
-    if abs(first-xmax)>abs(second-xmax):
-        return 
-    else:
-        return -(math.sqrt(e**2-3*d*f)-e)/(3*f)
-
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
     # Set the stats off 
@@ -74,7 +65,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
-    mean = fitfunc.GetParameter(3)
+    mean = fitfunc.GetMaximumX(3)
     meanErr = fitfunc.GetParError(3)
     # Calculate the uncalibrated Energy peak position and its uncertainty
     Ereco = math.exp(mean)
