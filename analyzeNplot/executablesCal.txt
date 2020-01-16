@@ -1,0 +1,15 @@
+# Executables for runBJetEnergyPeak.py
+
+python answers/runBJetEnergyPeak.py -i /store/user/cmsdas/2020/long_exercises/TopMass -j data/samples_Run2016_25ns.json -o MC_172 -n 2
+
+python answers/runBJetEnergyPeak.py -i /store/user/cmsdas/2020/long_exercises/TopMass -j data/samples_Run2016_m169p5.json -o MC_169 -n 2
+
+pyhton answers/runBJetEnergyPeak.py -i /store/user/cmsdas/2020/long_exercises/TopMass -j data/samples_Run2016_m175p5.json -o MC_175 -n 2
+
+python plotter.py -i MC_172 -j data/samples_Run2016_25ns.json -l 35867.
+
+python plotter.py -i MC_169 -j data/samples_Run2016_m169p5.json -l 35867.
+
+python plotter.py -i MC_175 -j data/samples_Run2016_m175p5.json -l 35867.
+
+
