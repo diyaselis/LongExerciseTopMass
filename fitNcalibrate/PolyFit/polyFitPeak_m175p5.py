@@ -1,13 +1,19 @@
 #!/usr/bin/env python
-# Executable
-# python pseudo_fitPeak_m169p5.py -i "MC_169" -j "../analyzeNplot/data/samples_Run2016_m169p5.json" -l 35867.
-
 import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
 import tdrstyle
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
+
+def Calc(a, b, c, xmax,d,e,f):
+    first = -(math.sqrt(b**2-3*a*c)+b)/(3*c)
+    second = (math.sqrt(b**2-3*a*c)-b)/(3*c)
+
+    if abs(first-xmax)>abs(second-xmax):
+        return
+    else:
+        return -(math.sqrt(e**2-3*d*f)-e)/(3*f)
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -33,38 +39,61 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     minToFit = 3.6
     maxToFit = 4.8
     ## Set the function
-    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
+    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
     ## Set normalization
-    fitfunc.SetParameter(0, h.Integral());
-    fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
-    ## Set gaussian mean starting value and limits
-    fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
-    ## Set gaussian width starting value and limits
-    fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    
+     
+    fitfunc.SetParameter(0, 0.07);
+    fitfunc.SetParLimits(0, -0.1, 0.1);
+    ## Set linear
+    fitfunc.SetParameter(1, 0.01);
+    fitfunc.SetParLimits(1, -0.5, 0.5);
+    ## Set quadratic
+    fitfunc.SetParameter(2, 10.45);
+    fitfunc.SetParLimits(2, -10, 20);
+    ## Set Cubic
+    fitfunc.SetParameter(3, 4.17);
+    fitfunc.SetParameter(4, h.Integral())
+    fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral()) 
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-    hFit.Fit("Gaussian fit","EMQ", "", minToFit, maxToFit) 
+    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit)
     # "E" stands for Minos, "M" for improving fit results
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
     # Get Fit Parameters
-    mean = fitfunc.GetParameter(1)
-    meanErr = fitfunc.GetParError(1)
-    sigma = fitfunc.GetParameter(2)
-    sigmaErr = fitfunc.GetParError(2)
+    constant = fitfunc.GetParameter(0)
+    constantErr = fitfunc.GetParError(0)
+    linear = fitfunc.GetParameter(1)
+    linearErr = fitfunc.GetParError(1)
+    quadratic = fitfunc.GetParameter(2)
+    quadraticErr = fitfunc.GetParError(2)
+    cubic = fitfunc.GetParameter(3)
+    cubicErr = fitfunc.GetParError(3)
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
+    mean = fitfunc.GetParameter(3)
+    meanErr = fitfunc.GetParError(3)
     # Calculate the uncalibrated Energy peak position and its uncertainty
     Ereco = math.exp(mean)
-    Err = abs(Ereco*meanErr)
-
+    Err = abs(Ereco*meanErr)  
+   
     #all done here ;)
     return Ereco,Err
 
@@ -75,7 +104,7 @@ def plotter(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus","","",63.0,66.0)
+    h.Fit("gaus")#","","",64.0,67.0)
     h.Draw()
 
     label1 = TLatex()
@@ -111,7 +140,7 @@ def plotterErr(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus","","",0,0.1)
+    h.Fit("gaus")#,"","",0,0.1)
     h.Draw()
 
     label1 = TLatex()
@@ -164,7 +193,7 @@ def plotterPull(h=None,name=None):
     label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
 
     c3.Update()
-
+    
     c3.SaveAs(name)
     c3.Close()
 
@@ -214,12 +243,13 @@ def main():
     r3.SetSeed(0)
     Npe = 2000
     
-    histoEb = TH1F("histoEb", "", 200,61,68) # 169v5
-    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 169v5
+   
+    histoEb = TH1F("histoEb", "", 200,64,70) # 169v5
+    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 175v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
-    pred = 65.74 #169v5
-
+    pred = 69.39 #175v5
+ 
     for i in range(0,Npe):
         histoPeak = histo.Clone()
         for ibin in range(0,histo.GetNbinsX()):
@@ -231,15 +261,16 @@ def main():
             histoPeak.SetBinError(ibin,err)
         # Calculate the energy peak position in the big MC sample
         Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        #print(Eb,DEb)
         histoEb.Fill(Eb)
         histoDEb.Fill(DEb)
         pull=(Eb-pred)/DEb
         histoPull.Fill(pull)
 
 
-    plotter(histoEb,"MC_169/Eb.png")
-    plotterErr(histoDEb,"MC_169/DEb.png")
-    plotterPull(histoPull,"MC_169/Pull.png")
+    plotter(histoEb,"PolyFit/Eb_m175p5.png")
+    plotterErr(histoDEb,"PolyFit/DEb_m175p5.png")
+    plotterPull(histoPull,"PolyFit/Pull_m175p5.png")
 
     res.Close()
 

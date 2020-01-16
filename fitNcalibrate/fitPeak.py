@@ -167,6 +167,9 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     del caption1,caption2
 
     #all done here ;)
+
+    topMass = Ereco+math.sqrt(80.385**2-4.18**2+Ereco**2)
+    print topMass
     return Ereco,Err
 
 def main():

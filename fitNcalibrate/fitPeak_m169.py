@@ -36,17 +36,17 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
     ## Set gaussian mean starting value and limits
     fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
+    fitfunc.SetParLimits(1, 3.8, 4.4);
     ## Set gaussian width starting value and limits
     fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    fitfunc.SetParLimits(2, 0.35, 1.0);
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-    hFit.Fit("Gaussian fit","EMQ", "", minToFit, maxToFit) 
+    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit) 
     # "E" stands for Minos, "M" for improving fit results
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
@@ -62,8 +62,8 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
 
-    #all done here ;)
     return Ereco,Err
+
 
 def plotter(h=None,name=None):
     c1 = TCanvas("c1","")
@@ -72,7 +72,18 @@ def plotter(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus","","",65.0,68.0)
+    fitfunc_gaus = TF1("Gaussian", myFitFunc, 64.0, 67.0, 3)
+    ## Set normalization
+    fitfunc_gaus.SetParameter(0, h.Integral());
+    fitfunc_gaus.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
+    ## Set gaussian mean starting value and limits
+    fitfunc_gaus.SetParameter(1, 64.5);
+    fitfunc_gaus.SetParLimits(1, 63.0, 67.0);
+    ## Set gaussian width starting value and limits
+    fitfunc_gaus.SetParameter(2, 0.05);
+    fitfunc_gaus.SetParLimits(2, 0.1, 2.0);
+
+    h.Fit("Gaussian","EM","",62.0,67.0)
     h.Draw()
 
     label1 = TLatex()
@@ -100,15 +111,17 @@ def plotter(h=None,name=None):
 
     c1.SaveAs(name)
     c1.Close()
+    del c1
 
-def plotterErr(h=None,name=None):
-    c2 = TCanvas("c2","")
-    c2.cd()
+
+def plotter_err(h=None,name=None):
+    c1 = TCanvas("c1","")
+    c1.cd()
     tdrstyle.setTDRStyle()
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus","","",0,0.1)
+    h.Fit("gaus")
     h.Draw()
 
     label1 = TLatex()
@@ -124,46 +137,19 @@ def plotterErr(h=None,name=None):
     label2.SetTextAlign(11)
     label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
 
-    c2.Update()
-    stats = c2.GetPrimitive("stats")
+    c1.Update()
+    stats = c1.GetPrimitive("stats")
     stats.__class__ = ROOT.TPaveStats
     stats.SetY1NDC(0.6)
     stats.SetY2NDC(0.9)
     stats.SetX1NDC(0.6)
     stats.SetX2NDC(0.9)
-    c2.RedrawAxis()
-    c2.Update()
+    c1.RedrawAxis()
+    c1.Update()
 
-    c2.SaveAs(name)
-    c2.Close()
-
-def plotterPull(h=None,name=None):
-    c3 = TCanvas("c3","")
-    c3.cd()
-    tdrstyle.setTDRStyle()
-    gROOT.ForceStyle()
-    gROOT.Reset()
-    h.UseCurrentStyle()
-    #h.Fit("gaus","","",64.0,67.0)
-    h.Draw()
-
-    label1 = TLatex()
-    label1.SetNDC()
-    label1.SetTextFont(60)
-    label1.SetTextSize(0.07)
-    label1.SetTextAlign(31)
-    label1.DrawLatex(0.32, 0.92, "CMS DAS")
-    label2 = TLatex()
-    label2.SetNDC()
-    label2.SetTextFont(42)
-    label2.SetTextSize(0.06)
-    label2.SetTextAlign(11)
-    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
-
-    c3.Update()
-
-    c3.SaveAs(name)
-    c3.Close()
+    c1.SaveAs(name)
+    c1.Close()
+    del c1
 
 def main():
 
@@ -174,7 +160,7 @@ def main():
     parser.add_option('-j', '--json',    dest='json',    help='json with list of files',  default="../analyzeNplot/data/samples_Run2015_25ns.json", type='string')
     parser.add_option('-l', '--lumi',    dest='lumi' ,   help='lumi to print out',        default=2444.,        type=float)
     (opt, args) = parser.parse_args()
-    
+           
     # Read list of MC samples
     if opt.isData is not True:
         samplesList=[]
@@ -206,41 +192,47 @@ def main():
             if sampleInfo is not samplesList[0]: 
                 histo.Add(res.Get(str("bjetenls/bjetenls_"+sampleInfo)).Clone());
 
+    # Create the output directory
+    if not os.path.isdir(opt.inDir):
+        os.mkdir(opt.inDir)
+
+    # Calculate the energy peak position in the big MC sample
+    Eb,DEb = gPeak(h=histo,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+    print "<E_{b}> = (%3.2f #pm %3.2f) GeV" % (Eb,DEb)
+
+
     #Generate pseudo-exp
     r3 = TRandom3()
     r3.SetSeed(0)
     Npe = 2000
-    
-    histoEb = TH1F("histoEb", "", 200,64,70) # 169v5
-    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 175v5
-    histoPull = TH1F("histoPull", "",100,-100,100)
 
-    pred = 69.39 #175v5
+    E_peak = TH1F("E_peak", "", 100,60,70) # 169v5
+    E_peak_err = TH1F("E_peak_err", "", 400,0.01,0.15) # 169v5
+    hpull = TH1F("hpull", "",100,-100,100)
+
+    pred = 65.740 #169v5
 
     for i in range(0,Npe):
-        histoPeak = histo.Clone()
+        hpe = histo.Clone()
         for ibin in range(0,histo.GetNbinsX()):
             y = histo.GetBinContent(ibin)
             x = histo.GetXaxis().GetBinCenter(ibin)
             fluct = r3.PoissonD(y*math.exp(x))/math.exp(x)
-            histoPeak.SetBinContent(ibin,fluct)
+            hpe.SetBinContent(ibin,fluct)
             err = math.sqrt(fluct)/math.exp(x)
-            histoPeak.SetBinError(ibin,err)
-        # Calculate the energy peak position in the big MC sample
-        Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
-        histoEb.Fill(Eb)
-        histoDEb.Fill(DEb)
+            hpe.SetBinError(ibin,err)
+    # Calculate the energy peak position in the big MC sample
+        Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        E_peak.Fill(Eb)
+        E_peak_err.Fill(DEb)
         pull=(Eb-pred)/DEb
-        histoPull.Fill(pull)
+        hpull.Fill(pull)
 
-
-    plotter(histoEb,"MC_175/Eb.png")
-    plotterErr(histoDEb,"MC_175/DEb.png")
-    plotterPull(histoPull,"MC_175/Pull.png")
+    plotter(E_peak,"Eb_m169.png")
+    plotter_err(E_peak_err,"ErrEb_m169.png")
+    plotter_err(hpull,"Pull_m169.png")
 
     res.Close()
-
+               
 if __name__ == "__main__":
     sys.exit(main())
-
-

@@ -1,12 +1,8 @@
 #Executables for pseudo_fitPeak_*.py
 
-mkdir MC_169
-mkdir MC_172
-mkdir MC_175
+python fitPeak_m169.py -i "MC_169" -j "../analyzeNplot/data/samples_Run2016_m169p5.json" -l 35867.
 
-python pseudo_fitPeak_m169p5.py -i "MC_169" -j "../analyzeNplot/data/samples_Run2016_m169p5.json" -l 35867.
+python fitPeak_m175.py -i "MC_175" -j "../analyzeNplot/data/samples_Run2016_m175p5.json" -l 35867.
 
-python pseudo_fitPeak_m175p5.py -i "MC_175" -j "../analyzeNplot/data/samples_Run2016_m175p5.json" -l 35867.
-
-python pseudo_fitPeak_m172p5.py -i "MC_172" -j "../analyzeNplot/data/samples_Run2016_25ns.json" -l 35867.
+python fitPeak_m172.py -i "MC_172" -j "../analyzeNplot/data/samples_Run2016_25ns.json" -l 35867.
 

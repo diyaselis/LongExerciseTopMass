@@ -40,7 +40,6 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     maxToFit = 4.8
     ## Set the function
     fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
-<<<<<<< HEAD
     ## Set normalization
     
      
@@ -67,32 +66,13 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
    
    
    
-=======
-    ## Set constant
-    fitfunc.SetParameter(0, 0);
-    #fitfunc.SetParLimits(0, -1000, 1000);
-    ## Set linear
-    fitfunc.SetParameter(1, 0);
-    #fitfunc.SetParLimits(1, -1000, 1000);
-    ## Set quadratic
-    fitfunc.SetParameter(2, 0);
-    #fitfunc.SetParLimits(2, -10, 1);
-    ## Set Cubic
-    fitfunc.SetParameter(3, 1);
-    fitfunc.SetParameter(4, h.Integral())
-    fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral())
->>>>>>> 29bd73aa0739c4ab47063418338ae30b8a314798
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-<<<<<<< HEAD
     hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit)
-=======
-    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit) 
->>>>>>> 29bd73aa0739c4ab47063418338ae30b8a314798
     # "E" stands for Minos, "M" for improving fit results
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
@@ -261,14 +241,10 @@ def main():
     #Generate pseudo-exp
     r3 = TRandom3()
     r3.SetSeed(0)
-    Npe = 20
+    Npe = 2000
     
-<<<<<<< HEAD
    
     histoEb = TH1F("histoEb", "", 200,61,68) # 169v5
-=======
-    histoEb = TH1F("histoEb", "", 200,63,68) # 169v5
->>>>>>> 29bd73aa0739c4ab47063418338ae30b8a314798
     histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 169v5
     histoPull = TH1F("histoPull", "",100,-100,100)
 
