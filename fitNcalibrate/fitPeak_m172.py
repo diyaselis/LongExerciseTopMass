@@ -112,6 +112,53 @@ def plotter(h=None,name=None):
     c1.Close()
     del c1
 
+def plotter_cal(h=None,name=None):
+    c1 = TCanvas("c1","")
+    c1.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    fitfunc_gaus = TF1("Gaussian", myFitFunc, 65.0, 69.0, 3)
+    ## Set normalization
+    fitfunc_gaus.SetParameter(0, h.Integral());
+    fitfunc_gaus.SetParLimits(0, 0.1*h.Integral(), 2.0*h.Integral());
+    ## Set gaussian mean starting value and limits
+    fitfunc_gaus.SetParameter(1, 67.5);
+    fitfunc_gaus.SetParLimits(1, 64.0, 70.0);
+    ## Set gaussian width starting value and limits
+    fitfunc_gaus.SetParameter(2, 0.05);
+    fitfunc_gaus.SetParLimits(2, 0.1, 2.0);
+
+    h.Fit("Gaussian","EM","",64.0,70.0)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c1.Update()
+    stats = c1.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c1.RedrawAxis()
+    c1.Update()
+
+    c1.SaveAs(name)
+    c1.Close()
+    del c1
 
 def plotter_err(h=None,name=None):
     c1 = TCanvas("c1","")
@@ -149,6 +196,46 @@ def plotter_err(h=None,name=None):
     c1.SaveAs(name)
     c1.Close()
     del c1
+
+def plotter_cal_err(h=None,name=None):
+    c1 = TCanvas("c1","")
+    c1.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    h.Fit("gaus","","",0.1,0.9)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c1.Update()
+    stats = c1.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c1.RedrawAxis()
+    c1.Update()
+
+    c1.SaveAs(name)
+    c1.Close()
+    del c1
+
+
+
 
 def main():
 
@@ -206,10 +293,20 @@ def main():
     Npe = 2000
     
     E_peak = TH1F("E_peak", "", 100,60,70) # 172v5
+    Eb_calibrated = TH1F("Eb_calibrated", "", 100,64,74) # 172v5
     E_peak_err = TH1F("E_peak_err", "", 400,0.01,0.15) # 172v5
+    delEb_calibrated = TH1F("delEb_calibrated", "", 80,0.2,1.0) # 172v5
     hpull = TH1F("hpull", "",100,-100,100)
+    hpullcal = TH1F("hpullcal", "",100,-10,10)
 
     pred = 67.57 #172v5
+
+    p0 = 29.6936
+    p1 = 0.529809
+    delp0 = 6.57756
+    delp1 = 0.0972778
+    covar = 0.639692435
+    DEb_uncal = 0.257576
 
     for i in range(0,Npe):
         hpe = histo.Clone()
@@ -224,12 +321,31 @@ def main():
         Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
         E_peak.Fill(Eb)
         E_peak_err.Fill(DEb)
+
+        #Apply the calibration
+        Eb_cal=(Eb-p0)/p1
+        Eb_calibrated.Fill(Eb_cal)
+
+        DEb_cal = Eb_cal*( ( (DEb_uncal**2.0+delp0**2.0)/(Eb-p0)**2.0 ) + (delp1/p1)**2.0 - ((2.0*covar)/((Eb-p0)*p1))  )**(0.5)    
+        delEb_calibrated.Fill(DEb_cal)
+
+        #calculating the calibrated pull
+        pullcal=(Eb_cal-pred)/DEb_cal
+        if abs(pullcal)<5.0:
+            hpullcal.Fill(pullcal)
+
         pull=(Eb-pred)/DEb
         hpull.Fill(pull)
 
     plotter(E_peak,"MC_172/Eb_m172.png")
     plotter_err(E_peak_err,"MC_172/ErrEb.png")
+    
     plotter_err(hpull,"MC_172/Pull.png")
+    plotter_err(hpullcal,"MC_172/Pull_corr_m172.png")   
+
+    plotter_cal(Eb_calibrated,"MC_172/Eb_cal_m172.png")
+    plotter_cal_err(delEb_calibrated,"MC_172/delEb_m172.png")
+
 
     res.Close()
                

@@ -62,6 +62,115 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
 
+    # Make a pull distribution    
+    hPull = h.Clone("Pull")
+    for ibin in range(1, hFit.GetNbinsX()+1):
+        if hFit.GetBinCenter(ibin) > minToFit and hFit.GetBinCenter(ibin) <= maxToFit:
+            binCont = hFit.GetBinContent(ibin)
+            binErr = hFit.GetBinError(ibin)
+            valIntegral = fitfunc.Eval(hFit.GetBinCenter(ibin))
+            if binErr !=0:
+              pull = (binCont-valIntegral)/binErr
+              hPull.SetBinContent(ibin, pull)
+              hPull.SetBinError(ibin, 1)
+        else:      
+            hPull.SetBinContent(ibin, 0.)
+            hPull.SetBinError(ibin, 0.)
+    hPull.SetMarkerStyle(8)
+    hPull.GetYaxis().SetNdivisions(504)
+    hPull.GetYaxis().SetTitleSize(0.140)
+    hPull.GetYaxis().SetLabelSize(0.140)
+    hPull.GetYaxis().SetTitleOffset(0.27)
+    hPull.GetYaxis().SetTitle("#frac{Data-Fit}{Uncertainty}")
+    hPull.GetXaxis().SetTitleSize(0.160)
+    hPull.GetXaxis().SetLabelSize(0.150)
+    hPull.GetXaxis().SetTitleOffset(0.8)
+    hPull.GetXaxis().SetTitle("log(E)")
+    hPull.SetLineColor(kBlack)
+    hPull.SetMarkerColor(kBlack)
+
+    # Plot the result
+    ## Create a canvas with two pads for plotting your histograms
+    c = TCanvas('c','c')
+    p1 = ROOT.TPad('p1','p1',0.,0.3,1.0,1.0)
+    p1.SetBorderMode(0)
+    p1.SetBorderSize(2)
+    p1.SetTickx(1)
+    p1.SetTicky(1)
+    p1.SetTopMargin(0.13)
+    p1.SetBottomMargin(0.02)
+    p1.Draw()    
+    p2 = ROOT.TPad('p2','p2',0.,0.,1.0,0.3)
+    p2.SetGridy()
+    p2.SetBorderMode(0)
+    p2.SetBorderSize(2)
+    p2.SetTickx(1)
+    p2.SetTicky(1)
+    p2.SetTopMargin(0.05)
+    p2.SetBottomMargin(0.3)
+    p2.Draw()
+    ## Draw in the pad of the fit
+    p1.cd()
+    hFit.GetXaxis().SetRangeUser(minToFit,maxToFit)     
+    hFit.Draw()
+    ##Create some labels about the statistics
+    caption1 = TLatex()
+    caption1.SetTextSize(0.045)
+    caption1.SetTextFont(42)
+    caption1.SetNDC()
+    caption1.DrawLatex(0.75,0.8,'Fit Results')
+    caption1.DrawLatex(0.73,0.76,'#mu = %4.2f #pm %4.2f'%(mean,meanErr))
+    caption1.DrawLatex(0.73,0.72,'#sigma = %4.2f #pm %4.2f'%(sigma,sigmaErr))
+    caption1.DrawLatex(0.74,0.67,'#chi^{2}/ndf = %4.2f'%(chi2ndf))
+    caption2 = TLatex()
+    caption2.SetTextSize(0.05)
+    caption2.SetTextFont(42)
+    caption2.SetNDC()  
+    caption2.DrawLatex(0.35,0.44,'Uncalibrated Measurement')
+    caption2.DrawLatex(0.35,0.39,'<E_{b}> = (%4.2f #pm %4.2f) GeV'%(Ereco,Err))
+    ## CMS labels
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.09)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.19, 0.9, "CMS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.0765)
+    label2.SetTextAlign(11)
+    if isData is True:
+        label2.DrawLatex(0.2, 0.9, "#it{Preliminary}")
+    else:
+        label2.DrawLatex(0.2, 0.9, "#it{Simulation preliminary}")
+    label3 = TLatex()
+    label3.SetNDC()
+    label3.SetTextFont(42)
+    label3.SetTextSize(0.0765)
+    label3.SetTextAlign(31)
+    label3.DrawLatex(0.90, 0.9, "%d pb^{-1} (13 TeV)" % lumi)
+    ## Edit the pad for the pull
+    p2.cd()
+    hPull.GetXaxis().SetRangeUser(minToFit,maxToFit)
+    hPull.Draw("e")
+
+    #save and delete
+    sName = inDir+"/fit_";
+    if isData is True:
+        sName = sName+"Data";
+    else: 
+        sName = sName+"MC";
+    c.SaveAs(sName+".pdf");
+    c.SaveAs(sName+".png");
+    del c
+    fitfunc.IsA().Destructor(fitfunc)
+    del caption1,caption2
+
+    #all done here ;)
+
+    topMass = Ereco+math.sqrt(80.385**2-4.18**2+Ereco**2)
+    print topMass
     return Ereco,Err
 
 
@@ -204,14 +313,14 @@ def main():
     #Generate pseudo-exp
     r3 = TRandom3()
     r3.SetSeed(0)
-    Npe = 2000
+    Npe = 20
 
     E_peak = TH1F("E_peak", "", 100,60,70) # 169v5
     E_peak_err = TH1F("E_peak_err", "", 400,0.01,0.15) # 169v5
     hpull = TH1F("hpull", "",100,-100,100)
 
     pred = 65.740 #169v5
-
+    print(Eb,DEb)
     for i in range(0,Npe):
         hpe = histo.Clone()
         for ibin in range(0,histo.GetNbinsX()):
@@ -221,8 +330,10 @@ def main():
             hpe.SetBinContent(ibin,fluct)
             err = math.sqrt(fluct)/math.exp(x)
             hpe.SetBinError(ibin,err)
-    # Calculate the energy peak position in the big MC sample
+        print(hpe.GetMean())
+ # Calculate the energy peak position in the big MC sample
         Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        print(Eb,DEb)
         E_peak.Fill(Eb)
         E_peak_err.Fill(DEb)
         pull=(Eb-pred)/DEb

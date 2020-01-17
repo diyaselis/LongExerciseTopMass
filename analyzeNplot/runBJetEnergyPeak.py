@@ -17,7 +17,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
     #book some histograms
     histos={ 
         'bjeten':ROOT.TH1F('bjeten',';Energy [GeV]; Jets',30,0,300),
-        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',80,3.,7.),
+        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',20,3.,7.),
         'nvtx'  :ROOT.TH1F('nvtx',';Vertex multiplicity; Events',30,0,30),
         'nbtags':ROOT.TH1F('nbtags',';b-tag multiplicity; Events',5,0,5),
         
