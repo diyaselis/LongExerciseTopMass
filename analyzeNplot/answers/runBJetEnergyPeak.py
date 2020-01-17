@@ -24,7 +24,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         'lep0pt':ROOT.TH1F('lep0pt',';Leading Lepton Transverse Momentum; Events',25,0,250),
         'lep1pt':ROOT.TH1F('lep1pt',';Subleading Lepton Transverse Momentum; Events',20,0,200),
         'bjeteta':ROOT.TH1F('bjeteta',';#eta; Jets',50,-3,3),
-        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',20,3.,7.),
+        'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',80,3.,7.),
         'metpt':ROOT.TH1F('metpt',';MET [GeV]; Jets',55,0.,1100.),
         'elpt':ROOT.TH1F('elpt',';electron pt [GeV]; electrons',40,0.,400.),
         'eleta':ROOT.TH1F('eleta',';#eta; electrons',50,-3,3),
@@ -104,17 +104,18 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
 
         for ij in xrange(0,len(matchedJetsP4)):
             histos['bmjeteta'].Fill(matchedJetsP4[ij].Eta(),evWgt)
+        
         for ij in xrange(0,len(leptonsP4)):
             if ij>1 : break
             lid=abs(tree.Lepton_id[ij])
             if lid!=11 and lid!=13:
                 raise Exception("Wrong lepton id!")
 
-            histos['lep0pt'].Fill(leptonsP4[ij].Pt(),evWgt)
-            histos['lep1pt'].Fill(leptonsP4[ij].Pt(),evWgt)
+            if ij == 0: histos['lep0pt'].Fill(leptonsP4[ij].Pt(),evWgt)
+            if ij == 1: histos['lep1pt'].Fill(leptonsP4[ij].Pt(),evWgt)
 
             #hard-coded masses for electrons and muons
-            lmass=0.00051 if lid==11 else 0.106
+            #lmass=0.00051 if lid==11 else 0.106
             ltag='el' if lid==11 else 'mu'
             histos[ltag+'pt'].Fill(leptonsP4[ij].Perp(),evWgt)
             histos[ltag+'eta'].Fill(leptonsP4[ij].Eta(),evWgt)

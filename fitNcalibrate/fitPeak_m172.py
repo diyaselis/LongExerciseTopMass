@@ -32,21 +32,21 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     ## Set the function
     fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
     ## Set normalization
-    fitfunc.SetParameter(2, h.Integral());
-    fitfunc.SetParLimits(2, 0.1*h.Integral(), 2.5*h.Integral());
+    fitfunc.SetParameter(0, h.Integral());
+    fitfunc.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
     ## Set gaussian mean starting value and limits
     fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
+    fitfunc.SetParLimits(1, 3.8, 4.4);
     ## Set gaussian width starting value and limits
     fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    fitfunc.SetParLimits(2, 0.35, 1.0);
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-    hFit.Fit("Gaussian fit","EMQ", "", minToFit, maxToFit) 
+    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit) 
     # "E" stands for Minos, "M" for improving fit results
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
@@ -62,10 +62,58 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     Ereco = math.exp(mean)
     Err = abs(Ereco*meanErr)
 
-    #all done here ;)
     return Ereco,Err
 
 def plotter(h=None,name=None):
+    c1 = TCanvas("c1","")
+    c1.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    fitfunc_gaus = TF1("Gaussian", myFitFunc, 64.0, 67.0, 3)
+    ## Set normalization
+    fitfunc_gaus.SetParameter(0, h.Integral());
+    fitfunc_gaus.SetParLimits(0, 0.1*h.Integral(), 2.5*h.Integral());
+    ## Set gaussian mean starting value and limits
+    fitfunc_gaus.SetParameter(1, 65.5);
+    fitfunc_gaus.SetParLimits(1, 64.0, 67.0);
+    ## Set gaussian width starting value and limits
+    fitfunc_gaus.SetParameter(2, 0.05);
+    fitfunc_gaus.SetParLimits(2, 0.1, 2.0);
+
+    h.Fit("Gaussian","EM","",64.0,67.0)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c1.Update()
+    stats = c1.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c1.RedrawAxis()
+    c1.Update()
+
+    c1.SaveAs(name)
+    c1.Close()
+    del c1
+
+
+def plotter_err(h=None,name=None):
     c1 = TCanvas("c1","")
     c1.cd()
     tdrstyle.setTDRStyle()
@@ -100,7 +148,7 @@ def plotter(h=None,name=None):
 
     c1.SaveAs(name)
     c1.Close()
-
+    del c1
 
 def main():
 
@@ -111,7 +159,7 @@ def main():
     parser.add_option('-j', '--json',    dest='json',    help='json with list of files',  default="../analyzeNplot/data/samples_Run2015_25ns.json", type='string')
     parser.add_option('-l', '--lumi',    dest='lumi' ,   help='lumi to print out',        default=2444.,        type=float)
     (opt, args) = parser.parse_args()
-    
+           
     # Read list of MC samples
     if opt.isData is not True:
         samplesList=[]
@@ -143,24 +191,25 @@ def main():
             if sampleInfo is not samplesList[0]: 
                 histo.Add(res.Get(str("bjetenls/bjetenls_"+sampleInfo)).Clone());
 
+    # Create the output directory
+    if not os.path.isdir(opt.inDir):
+        os.mkdir(opt.inDir)
+
+    # Calculate the energy peak position in the big MC sample
+    Eb,DEb = gPeak(h=histo,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+    print "<E_{b}> = (%3.2f #pm %3.2f) GeV" % (Eb,DEb)
+
+
     #Generate pseudo-exp
     r3 = TRandom3()
     r3.SetSeed(0)
     Npe = 2000
-    #heb = TH1F("heb", "", 50,61,68) # 169v5
-    heb = TH1F("heb", "", 50,63,70) # 172v5
-    #heb = TH1F("heb", "", 50,64,70) # 175v5
-
-    #hde = TH1F("hde", "", 30,0.09,0.2) # 169v5
-    hde = TH1F("hde", "", 30,0,0.4) # 172v5
-    #hde = TH1F("hde", "", 30,0.08,0.2) # 175v5
-
+    
+    E_peak = TH1F("E_peak", "", 100,60,70) # 172v5
+    E_peak_err = TH1F("E_peak_err", "", 400,0.01,0.15) # 172v5
     hpull = TH1F("hpull", "",100,-100,100)
-    hpullcal = TH1F("hpullcal", "",100,-100,100)
 
-    #pred = 65.740 #169v5
     pred = 67.57 #172v5
-    #pred = 69.39 #175v5
 
     for i in range(0,Npe):
         hpe = histo.Clone()
@@ -171,27 +220,18 @@ def main():
             hpe.SetBinContent(ibin,fluct)
             err = math.sqrt(fluct)/math.exp(x)
             hpe.SetBinError(ibin,err)
-        # Calculate the energy peak position in the big MC sample
+    # Calculate the energy peak position in the big MC sample
         Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
-        heb.Fill(Eb)
-        hde.Fill(DEb)
+        E_peak.Fill(Eb)
+        E_peak_err.Fill(DEb)
         pull=(Eb-pred)/DEb
         hpull.Fill(pull)
 
-        Ebcal=(Eb-29.6)/0.5312
-        DEbcal=DEb/0.5312
-        #print "Eb:", Eb, "  DEb:", DEb, "  Pull:", pull, "Delta:", abs(Eb-pred)
-        pullcal=(Ebcal-pred)/DEbcal
-        hpullcal.Fill(pullcal)
-
-    plotter(heb,"Eb.pdf")
-    plotter(hde,"Deb.pdf")
-    plotter(hpull,"Pull.pdf")
-    plotter(hpullcal,"Pull_corr.pdf")
+    plotter(E_peak,"MC_172/Eb_m172.png")
+    plotter_err(E_peak_err,"MC_172/ErrEb.png")
+    plotter_err(hpull,"MC_172/Pull.png")
 
     res.Close()
-
+               
 if __name__ == "__main__":
     sys.exit(main())
-
-

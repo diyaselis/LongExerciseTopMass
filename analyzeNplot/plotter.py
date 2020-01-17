@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import optparse
-import os,sys
+import os,sys,copy
 import json
 import ROOT
 import math
@@ -57,7 +57,7 @@ class Plot(object):
 
     def appendTo(self,outUrl):
         outF = ROOT.TFile.Open(outUrl,'UPDATE')
-        if not outF.cd(self.name):
+        if not outF.GetListOfKeys().Contains(self.name):
             outDir = outF.mkdir(self.name)
             outDir.cd()
         for m in self.mc :
@@ -128,11 +128,12 @@ class Plot(object):
         totalMC = None
         stack = ROOT.THStack('mc','mc')
         for h in self.mc:
-            stack.Add(self.mc[h],'hist')
+            tmpHistogram = copy.deepcopy(self.mc[h])
+            stack.Add(tmpHistogram,'hist')
             try:
-                totalMC.Add(self.mc[h])
+                totalMC.Add(tmpHistogram)
             except:
-                totalMC = self.mc[h].Clone('totalmc')
+                totalMC = tmpHistogram.Clone('totalmc')
                 self._garbageList.append(totalMC)
                 totalMC.SetDirectory(0)
 
@@ -362,6 +363,7 @@ def main():
     ROOT.gStyle.SetOptStat(0)
     ROOT.gROOT.SetBatch(True)
     outDir=opt.inDir+'/plots'
+    os.system('rm -rf %s' % outDir)
     os.system('mkdir -p %s' % outDir)
     for p in plots : 
         if opt.saveLog    : plots[p].savelog=True

@@ -4,7 +4,16 @@ from ROOT import *
 import tdrstyle
 
 def myFitFunc(x=None,par=None):
-    return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
+    return par[4]*(par[0]+par[1]*(x[0]-par[2])*(x[0]-par[3])**2)
+
+def Calc(a, b, c, xmax,d,e,f):
+    first = -(math.sqrt(b**2-3*a*c)+b)/(3*c)
+    second = (math.sqrt(b**2-3*a*c)-b)/(3*c)
+
+    if abs(first-xmax)>abs(second-xmax):
+        return
+    else:
+        return -(math.sqrt(e**2-3*d*f)-e)/(3*f)
 
 def gPeak(h=None,inDir=None,isData=None,lumi=None):
 
@@ -30,38 +39,61 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     minToFit = 3.6
     maxToFit = 4.8
     ## Set the function
-    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 3)
+    fitfunc = TF1("Gaussian fit", myFitFunc, minToFit, maxToFit, 5)
     ## Set normalization
-    fitfunc.SetParameter(2, h.Integral());
-    fitfunc.SetParLimits(2, 0.1*h.Integral(), 2.5*h.Integral());
-    ## Set gaussian mean starting value and limits
-    fitfunc.SetParameter(1, 4.2);
-    fitfunc.SetParLimits(1, 4., 4.4);
-    ## Set gaussian width starting value and limits
-    fitfunc.SetParameter(2, 0.65);
-    fitfunc.SetParLimits(2, 0.35, 0.95);
+    
+     
+    fitfunc.SetParameter(0, 0.07);
+    fitfunc.SetParLimits(0, -0.1, 0.1);
+    ## Set linear
+    fitfunc.SetParameter(1, 0.01);
+    fitfunc.SetParLimits(1, -0.5, 0.5);
+    ## Set quadratic
+    fitfunc.SetParameter(2, 10.45);
+    fitfunc.SetParLimits(2, -10, 20);
+    ## Set Cubic
+    fitfunc.SetParameter(3, 4.17);
+    fitfunc.SetParameter(4, h.Integral())
+    fitfunc.SetParLimits(4, 0.1*h.Integral(), 2.5*h.Integral()) 
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
     ## Some cosmetics
     fitfunc.SetLineColor(kBlue)
     fitfunc.SetLineWidth(3)
     fitfunc.SetLineStyle(1)
 
     # Do the fit
-    hFit.Fit("Gaussian fit","EMQ", "", minToFit, maxToFit) 
+    hFit.Fit("Gaussian fit","EM", "", minToFit, maxToFit)
     # "E" stands for Minos, "M" for improving fit results
     # cf. ftp://root.cern.ch/root/doc/5FittingHistograms.pdf    
 
     # Get Fit Parameters
-    mean = fitfunc.GetParameter(1)
-    meanErr = fitfunc.GetParError(1)
-    sigma = fitfunc.GetParameter(2)
-    sigmaErr = fitfunc.GetParError(2)
+    constant = fitfunc.GetParameter(0)
+    constantErr = fitfunc.GetParError(0)
+    linear = fitfunc.GetParameter(1)
+    linearErr = fitfunc.GetParError(1)
+    quadratic = fitfunc.GetParameter(2)
+    quadraticErr = fitfunc.GetParError(2)
+    cubic = fitfunc.GetParameter(3)
+    cubicErr = fitfunc.GetParError(3)
     chi2 = fitfunc.GetChisquare()
     NDF = fitfunc.GetNDF()
     chi2ndf = chi2/NDF
+    mean = fitfunc.GetParameter(3)
+    meanErr = fitfunc.GetParError(3)
     # Calculate the uncalibrated Energy peak position and its uncertainty
     Ereco = math.exp(mean)
-    Err = abs(Ereco*meanErr)
-
+    Err = abs(Ereco*meanErr)  
+   
     #all done here ;)
     return Ereco,Err
 
@@ -72,7 +104,7 @@ def plotter(h=None,name=None):
     gROOT.ForceStyle()
     gROOT.Reset()
     h.UseCurrentStyle()
-    h.Fit("gaus")
+    h.Fit("gaus")#","","",64.0,67.0)
     h.Draw()
 
     label1 = TLatex()
@@ -101,6 +133,69 @@ def plotter(h=None,name=None):
     c1.SaveAs(name)
     c1.Close()
 
+def plotterErr(h=None,name=None):
+    c2 = TCanvas("c2","")
+    c2.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    h.Fit("gaus")#,"","",0,0.1)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c2.Update()
+    stats = c2.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c2.RedrawAxis()
+    c2.Update()
+
+    c2.SaveAs(name)
+    c2.Close()
+
+def plotterPull(h=None,name=None):
+    c3 = TCanvas("c3","")
+    c3.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    #h.Fit("gaus","","",64.0,67.0)
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c3.Update()
+    
+    c3.SaveAs(name)
+    c3.Close()
 
 def main():
 
@@ -147,47 +242,35 @@ def main():
     r3 = TRandom3()
     r3.SetSeed(0)
     Npe = 2000
-    #heb = TH1F("heb", "", 50,61,68) # 169v5
-    heb = TH1F("heb", "", 50,63,70) # 172v5
-    #heb = TH1F("heb", "", 50,64,70) # 175v5
+    
+   
+    histoEb = TH1F("histoEb", "", 200,64,70) # 169v5
+    histoDEb = TH1F("histoDEb", "", 200,0,0.1) # 175v5
+    histoPull = TH1F("histoPull", "",100,-100,100)
 
-    #hde = TH1F("hde", "", 30,0.09,0.2) # 169v5
-    hde = TH1F("hde", "", 30,0,0.4) # 172v5
-    #hde = TH1F("hde", "", 30,0.08,0.2) # 175v5
-
-    hpull = TH1F("hpull", "",100,-100,100)
-    hpullcal = TH1F("hpullcal", "",100,-100,100)
-
-    #pred = 65.740 #169v5
-    pred = 67.57 #172v5
-    #pred = 69.39 #175v5
-
+    pred = 69.39 #175v5
+ 
     for i in range(0,Npe):
-        hpe = histo.Clone()
+        histoPeak = histo.Clone()
         for ibin in range(0,histo.GetNbinsX()):
             y = histo.GetBinContent(ibin)
             x = histo.GetXaxis().GetBinCenter(ibin)
             fluct = r3.PoissonD(y*math.exp(x))/math.exp(x)
-            hpe.SetBinContent(ibin,fluct)
+            histoPeak.SetBinContent(ibin,fluct)
             err = math.sqrt(fluct)/math.exp(x)
-            hpe.SetBinError(ibin,err)
+            histoPeak.SetBinError(ibin,err)
         # Calculate the energy peak position in the big MC sample
-        Eb,DEb = gPeak(h=hpe,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
-        heb.Fill(Eb)
-        hde.Fill(DEb)
+        Eb,DEb = gPeak(h=histoPeak,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
+        #print(Eb,DEb)
+        histoEb.Fill(Eb)
+        histoDEb.Fill(DEb)
         pull=(Eb-pred)/DEb
-        hpull.Fill(pull)
+        histoPull.Fill(pull)
 
-        Ebcal=(Eb-29.6)/0.5312
-        DEbcal=DEb/0.5312
-        #print "Eb:", Eb, "  DEb:", DEb, "  Pull:", pull, "Delta:", abs(Eb-pred)
-        pullcal=(Ebcal-pred)/DEbcal
-        hpullcal.Fill(pullcal)
 
-    plotter(heb,"Eb.pdf")
-    plotter(hde,"Deb.pdf")
-    plotter(hpull,"Pull.pdf")
-    plotter(hpullcal,"Pull_corr.pdf")
+    plotter(histoEb,"PolyFit/Eb_m175p5.png")
+    plotterErr(histoDEb,"PolyFit/DEb_m175p5.png")
+    plotterPull(histoPull,"PolyFit/Pull_m175p5.png")
 
     res.Close()
 
